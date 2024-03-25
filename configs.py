@@ -3,7 +3,7 @@
 class Configs:
     """Configs class for storing global variables"""
 
-    BASE_URL = "https://docs.aryaka.com/space/KNOW/1542430"
+    BASE_URL = "https://docs.aryaka.com/space/KNOW/1509742"
     PAGE_COMMON_ID = "rw_main"
     CONTENT_COMMON_ID = "printable_document"
     MAX_WAITING_TIME = 20

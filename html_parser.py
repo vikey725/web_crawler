@@ -25,6 +25,9 @@ class HtmlParser:
             data['tag_link'] = web_element['href']
         if web_element.name == 'img':
             data['image_link'] = web_element.get('src')
+        if web_element.name in ['td', 'th']:
+            data['colspan'] = str(web_element.attrs.get('colspan', '1'))
+            data['rowspan'] = str(web_element.attrs.get('rowspan', '1'))
         return data
 
 
@@ -70,7 +73,7 @@ class HtmlParser:
                 index_sequences.append(len(children_web_elements) - idx - 1)
                 stack.append((child_web_element, index_sequences))
             current_data = result
-        print(result[0]['children'][0])
+        print(result)
         
         return result
 
