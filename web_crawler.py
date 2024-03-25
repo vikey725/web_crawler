@@ -23,6 +23,7 @@ class WebCrawler:
     def __init__(self):
         self.queue = deque()
         self.visited = set()
+        self.parser = HtmlParser()
 
 
     def dump_data(self):
@@ -45,6 +46,9 @@ class WebCrawler:
                 continue
 
             page_source = self.crawl_url(web_url)
+            result = self.parser.parse_webpage(page_source)
+            # print(result)
+            break
 
         return None
 
@@ -64,7 +68,7 @@ class WebCrawler:
             driver.get(url)
             wait = WebDriverWait(driver, Configs.MAX_WAITING_TIME)
             wait.until(EC.visibility_of_all_elements_located((By.ID, Configs.PAGE_COMMON_ID)))
-            driver.implicitly_wait(10)
+            time.sleep(5)
 
             page_source = driver.page_source
         except Exception as ex:
@@ -74,3 +78,8 @@ class WebCrawler:
             driver.close()
 
         return page_source
+    
+
+if __name__ == '__main__':
+    crawler = WebCrawler()
+    crawler.crawl_website()
