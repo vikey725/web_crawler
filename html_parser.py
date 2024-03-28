@@ -23,8 +23,7 @@ class HtmlParser:
         if len(trs) == 0:
             return None
         num_rows, num_cols = len(trs), 0
-        headers = []
-        for elem in (trs[0].findAll('th') or trs[0].findAll('tr')):
+        for elem in (trs[0].findAll('th') or trs[0].findAll('td')):
             num_cols += int(elem.get('colspan', '1'))
 
         table_data = [['' for _ in range(num_cols)] for _ in range(num_rows)]
