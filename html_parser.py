@@ -14,10 +14,84 @@ class HtmlParser:
         pass
 
 
+    def parse_table(self, web_element):
+        # print(web_element)
+        tbody = web_element.find('tbody')
+        if tbody is None:
+            return None
+        trs = tbody.findAll('tr')
+        if len(trs) == 0:
+            return None
+        num_rows, num_cols = len(trs), 0
+        headers = []
+        for elem in (trs[0].findAll('th') or trs[0].findAll('tr')):
+            num_cols += int(elem.get('colspan', '1'))
+
+        table_data = [['' for _ in range(num_cols)] for _ in range(num_rows)]
+
+        for idx, tr in enumerate(trs):
+            row_data = tr.findAll('th') or tr.findAll('td')
+            for elem in row_data:
+                j = 0
+                while table_data[idx][j] != '':
+                    j += 1
+                colspan = int(elem.get('colspan', '1'))
+                rowspan = int(elem.get('rowspan', '1'))
+                for k in range(rowspan):
+                    for l in range(colspan):
+                        table_data[idx + k][j + l] = elem.get_text().strip()
+
+        return table_data
+
+
+    def parse_webpage_basic(self, page_source):
+        stack, result = [], []
+        soup = BeautifulSoup(page_source, 'html.parser')
+        web_element = soup.find(Configs.TOP_ELEMENT, id=Configs.CONTENT_COMMON_ID)
+        stack.append(web_element)
+
+        while len(stack) > 0:
+            web_element = stack.pop()
+            children_web_elements = web_element.findChildren(recursive=False)
+            tag_name = web_element.name
+
+            if tag_name == 'a':
+                result.append({
+                    'tag_name': tag_name,
+                    'text': web_element.get_text().strip(),
+                    'link': Configs.BASE_URL + web_element['href']
+                })
+            elif tag_name == 'table':
+                table_data = self.parse_table(web_element)
+                if table_data:
+                    result.append({
+                        'tag_name': tag_name,
+                        'table_data': table_data
+                    })
+            elif tag_name == 'img':
+                result.append({
+                    'tag_name': tag_name,
+                    'img_src': Configs.BASE_URL + web_element.get('src')
+                })
+
+            elif len(children_web_elements) == 0:
+                result.append({
+                    'tag_name': tag_name,
+                    'text': web_element.get_text().strip()
+                })
+
+            else:
+                children_web_elements.reverse()
+                stack.extend(children_web_elements)
+
+        return result
+    
+
     def get_data(self, web_element, no_of_children=0):
         data = {
         }
         data['tag_name'] = web_element.name
+
         if no_of_children == 0:
             if web_element.get_text().strip() != '':
                 data['tag_text'] = web_element.get_text().strip()
@@ -52,7 +126,7 @@ class HtmlParser:
         while len(stack) > 0:
             web_element, parent_index_sequences = stack.pop()
             index_sequences = parent_index_sequences.copy()
-            print('index_sequences: ', index_sequences)
+
             # print(current_data)
             for idx in index_sequences[:-1]:
                 current_data = current_data[idx]['children']
@@ -60,7 +134,7 @@ class HtmlParser:
 
             children_web_elements = web_element.findChildren(recursive=False)
             current_data['data'] = self.get_data(web_element, no_of_children=len(children_web_elements))
-            
+
             for idx, child_web_element in enumerate(children_web_elements):
                 current_data['children'].append({
                     'data': {},
@@ -73,10 +147,5 @@ class HtmlParser:
                 index_sequences.append(len(children_web_elements) - idx - 1)
                 stack.append((child_web_element, index_sequences))
             current_data = result
-        print(result)
-        
+       
         return result
-
-
-    def parse_table(self):
-        pass 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import time
+import traceback
 from collections import deque
 
 from selenium import webdriver
@@ -24,6 +25,7 @@ class WebCrawler:
         self.queue = deque()
         self.visited = set()
         self.parser = HtmlParser()
+        self.utils = Utils()
 
 
     def dump_data(self):
@@ -38,15 +40,22 @@ class WebCrawler:
         """Crawls entire website one url at a time and saves
         theit content in doc files in DATA_DIR.
         """
-        self.queue.append(Configs.BASE_URL)
+        self.queue.append(Configs.PAGE_URL)
         while len(self.queue):
             web_url = self.queue.popleft()
 
             if web_url in self.visited:
                 continue
 
-            page_source = self.crawl_url(web_url)
-            result = self.parser.parse_webpage(page_source)
+            page_source, links = self.crawl_url(web_url)
+            result = self.parser.parse_webpage_basic(page_source)
+            if result:
+                self.utils.write_docs(result, web_url)
+            self.visited.add(web_url)
+            for link in links:
+                if link not in self.visited:
+                    self.queue.append(link)
+
             # print(result)
             break
 
@@ -62,7 +71,7 @@ class WebCrawler:
         Returns:
             webElements or None: page source of url
         """
-        page_source = None
+        page_source, links = None, []
         try:
             driver = webdriver.Chrome()
             driver.get(url)
@@ -71,13 +80,14 @@ class WebCrawler:
             time.sleep(5)
 
             page_source = driver.page_source
+            links = [self.utils.preprocess_web_url(anchor.get_attribute('href')) for anchor in driver.find_elements(by=By.TAG_NAME, value="a") if anchor.get_attribute('href') is not None]
         except Exception as ex:
-            print(ex)
-            return page_source
+            print(traceback.print_exc())
+            return page_source, links
         finally:
             driver.close()
 
-        return page_source
+        return page_source, links
     
 
 if __name__ == '__main__':
